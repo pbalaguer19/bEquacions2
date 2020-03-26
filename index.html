@@ -118,6 +118,10 @@
         this.physics.add.overlap(player, stars, collectStar, null, this);
 
         this.physics.add.collider(player, bombs, hitBomb, null, this);
+
+        this.input.keyboard.on('keydown_A', function (event) {
+          console.log('Hello from the A Key!');
+        });
     }
 
     function update ()
