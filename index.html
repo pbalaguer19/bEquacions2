@@ -22,14 +22,10 @@
         }
     };
 
-    var player;
     var stars;
-    var bombs;
     var platforms;
-    var cursors;
-    var score = 0;
-    var gameOver = false;
     var scoreText;
+    var balance;
 
     var game = new Phaser.Game(config);
 
@@ -38,8 +34,7 @@
         this.load.image('sky', 'assets/sky.png');
         this.load.image('ground', 'assets/platform.png');
         this.load.image('star', 'assets/star.png');
-        this.load.image('bomb', 'assets/bomb.png');
-        this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 32, frameHeight: 48 });
+        this.load.image('balance', 'assets/balance.png');
     }
 
     function create ()
@@ -55,11 +50,14 @@
         platforms.create(400, 568, 'ground').setScale(2).refreshBody();
 
         //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
-        stars = this.physics.add.group({
+        /*stars = this.physics.add.group({
             key: 'star',
             repeat: 11,
             setXY: { x: 12, y: 0, stepX: 70 }
-        });
+        });*/
+
+        balance = this.physics.add.sprite(100, 450, 'balance');
+
 
         //  The score
         scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
