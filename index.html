@@ -36,16 +36,31 @@
     var platforms;
     var scoreText;
     var balance;
-    var star;
-    var collider;
+    var leftSide;
+    var rightSide;
     var bRight;
     var bLeft;
+    var one;
+
+    function getRndInteger(min, max) {
+    	return Math.floor(Math.random() * (max - min + 1) ) + min;
+    }
+
+    var m1 = getRndInteger(-10, 10);
+    var n1 = getRndInteger(-10, 10);
+    do{
+    	var m2 = getRndInteger(-10, 10);
+    }while(m2 == m1);
+    var n2 = getRndInteger(-10, 10);
 
     var game = new Phaser.Game(config);
 
     function preload (){
         this.load.image('sky', 'assets/sky.png');
-        this.load.image('star', 'assets/star.png');
+        this.load.image('one', 'assets/one.png');
+        this.load.image('minusone', 'assets/minusone.png');
+        this.load.image('x', 'assets/x.png');
+        this.load.image('minusx', 'assets/minusx.png');
         this.load.image('balanceRight', 'assets/balance_right.png');
         this.load.image('balanceLeft', 'assets/balance_left.png');
         this.load.image('balanceRightUp', 'assets/balance_right_up.png');
@@ -59,23 +74,13 @@
         this.add.image(400, 300, 'sky');
 
         //  The platforms group contains the ground and the 2 ledges we can jump on
-        platforms = this.physics.add.group();
-        platforms.enableBody = true;
-        platforms.physicsBodyType = Phaser.Physics.ARCADE;
+        platforms = this.physics.add.staticGroup();
         bRight = platforms.create(595, 500, 'balanceRight');
         bLeft = platforms.create(205, 500, 'balanceLeft');
-        bRight.body.collideWorldBounds = true;
-        bLeft.body.collideWorldBounds = true;
 
+        createLeftSide(this);
 
-        star = this.physics.add.image(200, 200, "star");
-        star.setInteractive();
-        this.input.on('pointerdown', startDrag, this)
-
-        collider = this.physics.add.collider(star, platforms);
-
-        //  The score
-        scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+        showEquation(this);
 
         this.input.keyboard.on('keydown_A', keyA, this);
         this.input.keyboard.on('keydown_S', keyS, this);
@@ -83,9 +88,16 @@
     }
 
     function update (){
-      if(star.y > 700){
-        star.setY(200);
+      if(one.y > 700){
+        one.setY(200);
       }
+    }
+
+    function createLeftSide(env){
+      one = env.physics.add.image(200, 200, "one");
+      one.setInteractive();
+      env.input.on('pointerdown', startDrag, this)
+      env.physics.add.collider(one, platforms);
     }
 
     function startDrag(pointer, targets) {
@@ -98,7 +110,6 @@
     function doDrag(pointer) {
       this.dragObj.x = pointer.x;
       this.dragObj.y = pointer.y;
-      console.log(pointer.x + " " + pointer.y)
     }
 
     function stopDrag() {
@@ -108,27 +119,97 @@
     }
 
     function keyA(){
-      bRight.setTexture("balanceRightDown");
-      bRight.setY(518);
-
-      bLeft.setTexture("balanceLeftUp");
-      bLeft.setY(481);
+      bRight.destroy();
+      bLeft.destroy();
+      bRight = platforms.create(595, 518, 'balanceRightDown');
+      bLeft = platforms.create(205, 481, 'balanceLeftUp');
+      one.setY(340);
     }
 
     function keyS(){
-      bRight.setTexture("balanceRight");
-      bRight.setY(500);
-
-      bLeft.setTexture("balanceLeft");
-      bLeft.setY(500);
+      bRight.destroy();
+      bLeft.destroy();
+      bRight = platforms.create(595, 500, 'balanceRight');
+      bLeft = platforms.create(205, 500, 'balanceLeft');
+      one.setY(340);
     }
 
     function keyD() {
-      bRight.setTexture("balanceRightUp");
-      bRight.setY(481);
+      bRight.destroy();
+      bLeft.destroy();
+      bRight = platforms.create(595, 481, 'balanceRightUp');
+      bLeft = platforms.create(205, 518, 'balanceLeftDown');
+      one.setY(340);
+    }
 
-      bLeft.setTexture("balanceLeftDown");
-      bLeft.setY(518);
+    function showEquation(env){
+    	if(n1 % 1 != 0) n1 = parseFloat(n1).toFixed(2);
+    	if(m1 % 1 != 0) m1 = parseFloat(m1).toFixed(2);
+    	if(n2 % 1 != 0) n2 = parseFloat(n2).toFixed(2);
+    	if(m2 % 1 != 0) m2 = parseFloat(m2).toFixed(2);
+    	// M1
+    	if(m1 == 1){
+    		eq = "x";
+    	}else{
+    		if(m1 == 0){
+    			eq = "";
+    		}else{
+    			if(m1 == -1){
+    				eq = "-x";
+    			}else{
+    				eq = m1 + "x";
+    			}
+    		}
+    	}
+
+    	// N1
+    	if(n1 == 0 && m1 != 0){
+    		eq = eq + " = ";
+    	}else{
+    		if(m1 != 0){
+    			if(n1 < 0){
+    				eq = eq + " - " + Math.abs(n1) + " = ";
+    			}else{
+    				eq = eq + " + " + n1 + " = ";
+    			}
+    		}else{
+    			eq = eq + n1 + " = ";
+    		}
+    	}
+
+    	// M2
+    	if(m2 != 1 && m2 != -1 && m2 != 0){
+    		eq = eq + m2 + "x";
+    	}else{
+    		if(m2 == 0){
+    			eq = eq + "";
+    		}else{
+    			if(m2 == -1){
+    				eq = eq + "-x";
+    			}else{
+    				eq = eq + "x";
+    			}
+    		}
+    	}
+
+    	// N2
+    	if(n2 != 0){
+    		if(m2 != 0){
+    			if(n2 < 0){
+    				eq = eq + " - " + Math.abs(n2);
+    			}else{
+    				eq = eq + " + " + n2;
+    			}
+    		}else{
+    			eq = eq + n2;
+    		}
+    	}else{
+    		if(m2 == 0){
+    			eq = eq + "0"
+    		}
+    	}
+
+      scoreText = env.add.text(16, 16, eq, { fontSize: '32px', fill: '#000' });
     }
     </script>
 
