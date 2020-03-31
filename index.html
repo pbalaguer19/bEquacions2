@@ -41,6 +41,8 @@
     var bRight;
     var bLeft;
     var one;
+    var staticOne;
+    var staticX;
 
     function getRndInteger(min, max) {
     	return Math.floor(Math.random() * (max - min + 1) ) + min;
@@ -78,6 +80,7 @@
         bRight = platforms.create(595, 500, 'balanceRight');
         bLeft = platforms.create(205, 500, 'balanceLeft');
 
+        createStaticElements(this);
         createLeftSide(this);
 
         showEquation(this);
@@ -93,10 +96,18 @@
       }
     }
 
+    function createStaticElements(env){
+      staticOne = env.add.sprite(750, 50, "one");
+      staticOne.setInteractive();
+      staticX = env.add.sprite(750, 80, "x");
+      staticX.setInteractive();
+      env.input.on('pointerdown', startDrag, env)
+    }
+
     function createLeftSide(env){
       one = env.physics.add.image(200, 200, "one");
       one.setInteractive();
-      env.input.on('pointerdown', startDrag, this)
+      env.input.on('pointerdown', startDrag, env)
       env.physics.add.collider(one, platforms);
     }
 
@@ -108,8 +119,27 @@
     }
 
     function doDrag(pointer) {
-      this.dragObj.x = pointer.x;
-      this.dragObj.y = pointer.y;
+      if(this.dragObj == staticOne || this.dragObj == staticX){
+        if(this.dragObj == staticOne){
+          staticOne = this.add.sprite(750, 50, "one");
+          staticOne.setInteractive();
+          tmp = this.physics.add.image(this.dragObj.x, this.dragObj.y, "one");
+        }else{
+          staticX = this.add.sprite(750, 80, "x");
+          staticX.setInteractive();
+          tmp = this.physics.add.image(this.dragObj.x, this.dragObj.y, "x");
+        }
+
+        tmp.setInteractive();
+        this.physics.add.collider(tmp, platforms);
+        this.dragObj.destroy();
+        this.dragObj = tmp;
+
+        this.input.on('pointerdown', startDrag, this)
+      }else{
+        this.dragObj.x = pointer.x;
+        this.dragObj.y = pointer.y;
+      }
     }
 
     function stopDrag() {
