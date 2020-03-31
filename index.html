@@ -18,61 +18,117 @@
         },
         scene: {
             preload: preload,
-            create: create
+            create: create,
+            update: update
         }
     };
 
-    var stars;
+    /*
+    Coordenades
+      - Esquerra (x): 0-315
+      - Dreta (x): 475-800
+
+      - Equilibri (y): 380
+      - Dalt (y): 340
+      - Baix (y): 420
+    */
+
     var platforms;
     var scoreText;
     var balance;
+    var star;
+    var collider;
+    var bRight;
+    var bLeft;
 
     var game = new Phaser.Game(config);
 
-    function preload ()
-    {
+    function preload (){
         this.load.image('sky', 'assets/sky.png');
-        this.load.image('ground', 'assets/platform.png');
         this.load.image('star', 'assets/star.png');
-        this.load.image('balance', 'assets/balance.png');
+        this.load.image('balanceRight', 'assets/balance_right.png');
+        this.load.image('balanceLeft', 'assets/balance_left.png');
+        this.load.image('balanceRightUp', 'assets/balance_right_up.png');
+        this.load.image('balanceLeftUp', 'assets/balance_left_up.png');
+        this.load.image('balanceRightDown', 'assets/balance_right_down.png');
+        this.load.image('balanceLeftDown', 'assets/balance_left_down.png');
     }
 
-    function create ()
-    {
+    function create (){
         //  A simple background for our game
         this.add.image(400, 300, 'sky');
 
         //  The platforms group contains the ground and the 2 ledges we can jump on
-        platforms = this.physics.add.staticGroup();
+        platforms = this.physics.add.group();
+        platforms.enableBody = true;
+        platforms.physicsBodyType = Phaser.Physics.ARCADE;
+        bRight = platforms.create(595, 500, 'balanceRight');
+        bLeft = platforms.create(205, 500, 'balanceLeft');
+        bRight.body.collideWorldBounds = true;
+        bLeft.body.collideWorldBounds = true;
 
-        //  Here we create the ground.
-        //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-        platforms.create(400, 568, 'ground').setScale(2).refreshBody();
 
-        //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
-        /*stars = this.physics.add.group({
-            key: 'star',
-            repeat: 11,
-            setXY: { x: 12, y: 0, stepX: 70 }
-        });*/
+        star = this.physics.add.image(200, 200, "star");
+        star.setInteractive();
+        this.input.on('pointerdown', startDrag, this)
 
-        balance = this.physics.add.sprite(100, 450, 'balance');
-
+        collider = this.physics.add.collider(star, platforms);
 
         //  The score
         scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
 
-        //  Collide the player and the stars with the platforms
-        this.physics.add.collider(stars, platforms);
-
-        this.input.keyboard.on('keydown_A', function (event) {
-          console.log('Hello from the A Key!');
-        });
+        this.input.keyboard.on('keydown_A', keyA, this);
+        this.input.keyboard.on('keydown_S', keyS, this);
+        this.input.keyboard.on('keydown_D', keyD, this);
     }
 
-    function update ()
-    {
+    function update (){
+      if(star.y > 700){
+        star.setY(200);
+      }
+    }
 
+    function startDrag(pointer, targets) {
+      this.input.off('pointerdown', startDrag, this);
+      this.dragObj = targets[0];
+      this.input.on('pointermove', doDrag, this);
+      this.input.on('pointerup', stopDrag, this);
+    }
+
+    function doDrag(pointer) {
+      this.dragObj.x = pointer.x;
+      this.dragObj.y = pointer.y;
+      console.log(pointer.x + " " + pointer.y)
+    }
+
+    function stopDrag() {
+      this.input.on('pointerdown', startDrag, this);
+      this.input.off('pointermove', doDrag, this);
+      this.input.off('pointerup', stopDrag, this);
+    }
+
+    function keyA(){
+      bRight.setTexture("balanceRightDown");
+      bRight.setY(518);
+
+      bLeft.setTexture("balanceLeftUp");
+      bLeft.setY(481);
+    }
+
+    function keyS(){
+      bRight.setTexture("balanceRight");
+      bRight.setY(500);
+
+      bLeft.setTexture("balanceLeft");
+      bLeft.setY(500);
+    }
+
+    function keyD() {
+      bRight.setTexture("balanceRightUp");
+      bRight.setY(481);
+
+      bLeft.setTexture("balanceLeftDown");
+      bLeft.setY(518);
     }
     </script>
 
