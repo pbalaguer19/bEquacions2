@@ -36,11 +36,12 @@
     var platforms;
     var scoreText;
     var balance;
-    var leftSide;
-    var rightSide;
+    var leftSideOnes = new Set();
+    var leftSideXs = new Set();
+    var rightSideOnes = new Set();
+    var rightSideXs = new Set();
     var bRight;
     var bLeft;
-    var one;
     var staticOne;
     var staticX;
     var trash;
@@ -84,7 +85,9 @@
 
         createStaticElements(this);
         createLeftSide(this);
+        createRightSide(this);
 
+        scoreText = this.add.text(16, 16, "", { fontSize: '32px', fill: '#000' });
         showEquation(this);
 
         this.input.keyboard.on('keydown_A', keyA, this);
@@ -93,9 +96,39 @@
     }
 
     function update (){
-      if(one.y > 700){
-        one.setY(200);
+      for (let item of leftSideOnes){
+        if(item.y > 700){
+          leftSideOnes.delete(item);
+          item.destroy();
+          if(n1 >= 0) n1--;
+          else n1++;
+        }
       }
+      for (let item of leftSideXs){
+        if(item.y > 700){
+          leftSideXs.delete(item);
+          item.destroy();
+          if(m1 >= 0) m1--;
+          else m1++;
+        }
+      }
+      for (let item of rightSideOnes){
+        if(item.y > 700){
+          rightSideOnes.delete(item);
+          item.destroy();
+          if(n2 >= 0) n2--;
+          else n2++;
+        }
+      }
+      for (let item of rightSideXs){
+        if(item.y > 700){
+          rightSideXs.delete(item);
+          item.destroy();
+          if(m2 >= 0) m2--;
+          else m2++;
+        }
+      }
+      showEquation(this);
     }
 
     function createStaticElements(env){
@@ -108,10 +141,45 @@
     }
 
     function createLeftSide(env){
-      one = env.physics.add.image(200, 200, "one");
-      one.setInteractive();
-      env.input.on('pointerdown', startDrag, env)
-      env.physics.add.collider(one, platforms);
+      buildBlocks(env, n1, leftSideOnes, "one", "minusone", 200);
+      buildBlocks(env, m1, leftSideXs, "x", "minusx", 100);
+    }
+
+    function createRightSide(env){
+      buildBlocks(env, n2, rightSideOnes, "one", "minusone", 700);
+      buildBlocks(env, m2, rightSideXs, "x", "minusx", 600);
+    }
+
+    function buildBlocks(env, number, set, positibetag, negativetag, xPos){
+      var blocksOfFive = -1;
+      if(number > 0){
+        for (var i=0; i<number; i++){
+          if(i%5 == 0) blocksOfFive++;
+          var tmp = env.physics.add.image(xPos + 25*blocksOfFive, 382 - 25*(i%5), positibetag);
+          tmp.setInteractive();
+          set.add(tmp);
+          env.input.on('pointerdown', startDrag, env)
+          env.physics.add.collider(tmp, platforms);
+          addColliders(tmp, env);
+        }
+      }else{
+        for (var i=0; i<Math.abs(number); i++){
+          if(i%5 == 0) blocksOfFive++;
+          var tmp = env.physics.add.image(xPos + 25*blocksOfFive, 382 - 23*(i%5), negativetag);
+          tmp.setInteractive();
+          set.add(tmp);
+          env.input.on('pointerdown', startDrag, env)
+          env.physics.add.collider(tmp, platforms);
+          addColliders(tmp, env);
+        }
+      }
+    }
+
+    function addColliders(newitem, env){
+      for (let item of leftSideOnes) env.physics.add.collider(newitem, item);
+      for (let item of leftSideXs) env.physics.add.collider(newitem, item);
+      for (let item of rightSideOnes) env.physics.add.collider(newitem, item);
+      for (let item of rightSideXs) env.physics.add.collider(newitem, item);
     }
 
     function startDrag(pointer, targets) {
@@ -119,6 +187,21 @@
       this.dragObj = targets[0];
       this.input.on('pointermove', doDrag, this);
       this.input.on('pointerup', stopDrag, this);
+
+      if(this.dragObj.x < 315){
+        if(this.dragObj.texture.key == "one"){
+          leftSideOnes.delete(this.dragObj);
+        }else{
+          leftSideXs.delete(this.dragObj);
+        }
+      }
+      if(this.dragObj.x > 475){
+        if(this.dragObj.texture.key == "one"){
+          rightSideOnes.delete(this.dragObj);
+        }else{
+          rightSideXs.delete(this.dragObj);
+        }
+      }
     }
 
     function doDrag(pointer) {
@@ -143,7 +226,7 @@
         this.dragObj.x = pointer.x;
         this.dragObj.y = pointer.y;
         if(this.dragObj.x > 730 && this.dragObj.x < 770 && this.dragObj.y > 0 && this.dragObj.y < 40){
-          this.dragObj.destroy();
+          this.dragObj.setVisible(false);
         }
       }
     }
@@ -152,6 +235,35 @@
       this.input.on('pointerdown', startDrag, this);
       this.input.off('pointermove', doDrag, this);
       this.input.off('pointerup', stopDrag, this);
+
+      /*
+      - Esquerra (x): 0-315
+      - Dreta (x): 475-800
+      */
+
+      // Delete previous position
+      leftSideXs.delete(this.dragObj);
+      leftSideOnes.delete(this.dragObj);
+      rightSideXs.delete(this.dragObj);
+      rightSideOnes.delete(this.dragObj);
+
+      // Add the element in the new position if any
+      if(this.dragObj.visible){
+        if(this.dragObj.x < 315){
+          if(this.dragObj.texture.key == "one"){
+            leftSideOnes.add(this.dragObj);
+          }else{
+            leftSideXs.add(this.dragObj);
+          }
+        }
+        if(this.dragObj.x > 475){
+          if(this.dragObj.texture.key == "one"){
+            rightSideOnes.add(this.dragObj);
+          }else{
+            rightSideXs.add(this.dragObj);
+          }
+        }
+      }
     }
 
     function keyA(){
@@ -159,7 +271,7 @@
       bLeft.destroy();
       bRight = platforms.create(595, 518, 'balanceRightDown');
       bLeft = platforms.create(205, 481, 'balanceLeftUp');
-      one.setY(340);
+      //TODO: one.setY(340);
     }
 
     function keyS(){
@@ -167,7 +279,7 @@
       bLeft.destroy();
       bRight = platforms.create(595, 500, 'balanceRight');
       bLeft = platforms.create(205, 500, 'balanceLeft');
-      one.setY(340);
+      //TODO: one.setY(340);
     }
 
     function keyD() {
@@ -175,7 +287,7 @@
       bLeft.destroy();
       bRight = platforms.create(595, 481, 'balanceRightUp');
       bLeft = platforms.create(205, 518, 'balanceLeftDown');
-      one.setY(340);
+      //TODO: one.setY(340);
     }
 
     function showEquation(env){
@@ -245,7 +357,7 @@
     		}
     	}
 
-      scoreText = env.add.text(16, 16, eq, { fontSize: '32px', fill: '#000' });
+      scoreText.setText(eq);
     }
     </script>
 
