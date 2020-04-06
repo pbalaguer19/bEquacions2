@@ -24,13 +24,9 @@
     };
 
     /*
-    Coordenades
-      - Esquerra (x): 0-315
-      - Dreta (x): 475-800
-
-      - Equilibri (y): 380
-      - Dalt (y): 340
-      - Baix (y): 420
+    TODO:
+    - Inequacions
+    - key A D S
     */
 
     var platforms;
@@ -44,7 +40,9 @@
     var bLeft;
     var staticOne;
     var staticX;
-    var trash;
+    var staticMinusOne;
+    var staticMinusX;
+    var lastThrownColliders = [];
 
     function getRndInteger(min, max) {
     	return Math.floor(Math.random() * (max - min + 1) ) + min;
@@ -66,6 +64,7 @@
         this.load.image('x', 'assets/x.png');
         this.load.image('minusx', 'assets/minusx.png');
         this.load.image('trash', 'assets/trash.png');
+        this.load.image('arrow', 'assets/arrow.png');
         this.load.image('balanceRight', 'assets/balance_right.png');
         this.load.image('balanceLeft', 'assets/balance_left.png');
         this.load.image('balanceRightUp', 'assets/balance_right_up.png');
@@ -132,11 +131,18 @@
     }
 
     function createStaticElements(env){
-      trash = env.add.sprite(750, 20, "trash");
-      staticOne = env.add.sprite(750, 50, "one");
+      env.add.sprite(750, 580, "trash");
+      env.add.sprite(50, 580, "trash");
+      env.add.sprite(80, 580, "arrow");
+      env.add.sprite(720, 580, "arrow");
+      staticOne = env.add.sprite(750, 80, "one");
       staticOne.setInteractive();
-      staticX = env.add.sprite(750, 80, "x");
+      staticX = env.add.sprite(750, 20, "x");
       staticX.setInteractive();
+      staticMinusOne = env.add.sprite(750, 110, "minusone");
+      staticMinusOne.setInteractive();
+      staticMinusX = env.add.sprite(750, 50, "minusx");
+      staticMinusX.setInteractive();
       env.input.on('pointerdown', startDrag, env)
     }
 
@@ -160,7 +166,7 @@
           set.add(tmp);
           env.input.on('pointerdown', startDrag, env)
           env.physics.add.collider(tmp, platforms);
-          addColliders(tmp, env);
+          addColliders(env, tmp);
         }
       }else{
         for (var i=0; i<Math.abs(number); i++){
@@ -170,16 +176,16 @@
           set.add(tmp);
           env.input.on('pointerdown', startDrag, env)
           env.physics.add.collider(tmp, platforms);
-          addColliders(tmp, env);
+          addColliders(env, tmp);
         }
       }
     }
 
-    function addColliders(newitem, env){
-      for (let item of leftSideOnes) env.physics.add.collider(newitem, item);
-      for (let item of leftSideXs) env.physics.add.collider(newitem, item);
-      for (let item of rightSideOnes) env.physics.add.collider(newitem, item);
-      for (let item of rightSideXs) env.physics.add.collider(newitem, item);
+    function addColliders(env, newitem){
+      for (let item of leftSideOnes) lastThrownColliders.push(env.physics.add.collider(newitem, item));
+      for (let item of leftSideXs) lastThrownColliders.push(env.physics.add.collider(newitem, item));
+      for (let item of rightSideOnes) lastThrownColliders.push(env.physics.add.collider(newitem, item));
+      for (let item of rightSideXs) lastThrownColliders.push(env.physics.add.collider(newitem, item));
     }
 
     function startDrag(pointer, targets) {
@@ -205,29 +211,36 @@
     }
 
     function doDrag(pointer) {
-      if(this.dragObj == staticOne || this.dragObj == staticX){
+      if(this.dragObj == staticOne || this.dragObj == staticX || this.dragObj == staticMinusX || this.dragObj == staticMinusOne){
         if(this.dragObj == staticOne){
-          staticOne = this.add.sprite(750, 50, "one");
+          staticOne = this.add.sprite(750, 80, "one");
           staticOne.setInteractive();
           tmp = this.physics.add.image(this.dragObj.x, this.dragObj.y, "one");
-        }else{
-          staticX = this.add.sprite(750, 80, "x");
+        }if(this.dragObj == staticX){
+          staticX = this.add.sprite(750, 20, "x");
           staticX.setInteractive();
           tmp = this.physics.add.image(this.dragObj.x, this.dragObj.y, "x");
+        }if(this.dragObj == staticMinusOne){
+          staticMinusOne = this.add.sprite(750, 110, "minusone");
+          staticMinusOne.setInteractive();
+          tmp = this.physics.add.image(this.dragObj.x, this.dragObj.y, "minusone");
+        }if(this.dragObj == staticMinusX){
+          staticMinusX = this.add.sprite(750, 50, "minusx");
+          staticMinusX.setInteractive();
+          tmp = this.physics.add.image(this.dragObj.x, this.dragObj.y, "minusx");
         }
 
         tmp.setInteractive();
-        this.physics.add.collider(tmp, platforms);
+        lastThrownColliders = [];
+        lastThrownColliders.push(this.physics.add.collider(tmp, platforms));
         this.dragObj.destroy();
         this.dragObj = tmp;
+        addColliders(this, tmp);
 
         this.input.on('pointerdown', startDrag, this)
       }else{
         this.dragObj.x = pointer.x;
         this.dragObj.y = pointer.y;
-        if(this.dragObj.x > 730 && this.dragObj.x < 770 && this.dragObj.y > 0 && this.dragObj.y < 40){
-          this.dragObj.setVisible(false);
-        }
       }
     }
 
@@ -251,19 +264,53 @@
       if(this.dragObj.visible){
         if(this.dragObj.x < 315){
           if(this.dragObj.texture.key == "one"){
-            leftSideOnes.add(this.dragObj);
-          }else{
-            leftSideXs.add(this.dragObj);
+            startDragUpdate(this, leftSideOnes, "n1", n1 >= 0);
+          }if(this.dragObj.texture.key == "x"){
+            startDragUpdate(this, leftSideXs, "m1", m1 >= 0);
+          }if(this.dragObj.texture.key == "minusone"){
+            startDragUpdate(this, leftSideOnes, "n1", n1 <= 0);
+          }if(this.dragObj.texture.key == "minusx"){
+            startDragUpdate(this, leftSideXs, "m1", m1 <= 0);
           }
         }
         if(this.dragObj.x > 475){
           if(this.dragObj.texture.key == "one"){
-            rightSideOnes.add(this.dragObj);
-          }else{
-            rightSideXs.add(this.dragObj);
+            startDragUpdate(this, rightSideOnes, "n2", n2 >= 0);
+          }if(this.dragObj.texture.key == "x"){
+            startDragUpdate(this, rightSideXs, "m2", m2 >= 0);
+          }if(this.dragObj.texture.key == "minusone"){
+            startDragUpdate(this, rightSideOnes, "n2", n2 <= 0);
+          }if(this.dragObj.texture.key == "minusx"){
+            startDragUpdate(this, rightSideXs, "m2", m2 <= 0);
           }
         }
+        showEquation(this);
       }
+    }
+
+    function startDragUpdate(env, set, globalVarName, condition){
+      if(condition){
+        set.add(env.dragObj);
+        if(window[globalVarName] > 0) window[globalVarName] = set.size;
+        else window[globalVarName] = set.size * (-1);
+      }
+      else{
+        lastThrownColliders.forEach(function(lastThrownCollider) {
+          lastThrownCollider.collideCallback = function(e1, e2){
+            var it = set.values();
+            var tmp = it.next().value;
+            set.delete(tmp);
+            tmp.destroy();
+            e1.destroy();
+            if(window[globalVarName] > 0) window[globalVarName] = set.size;
+            else window[globalVarName] = set.size * (-1);
+          };
+        });
+      }
+    }
+
+    function oncollide(s1, s2){
+      console.log("test");
     }
 
     function keyA(){
