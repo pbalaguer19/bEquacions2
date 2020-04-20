@@ -55,6 +55,8 @@
     }while(m2 == m1);
     var n2 = getRndInteger(-10, 10);
 
+    var result = (n2-n1) / (m1-m2)
+
     var game = new Phaser.Game(config);
 
     function preload (){
@@ -284,6 +286,8 @@
             startDragUpdate(this, rightSideXs, "m2", m2 <= 0);
           }
         }
+        updateInternalValues();
+        // TODO: Update balance position **********************************
         showEquation(this);
       }
     }
@@ -309,8 +313,18 @@
       }
     }
 
-    function oncollide(s1, s2){
-      console.log("test");
+    function updateInternalValues() {
+      if(m1 > 0) m1 = leftSideXs.size;
+      else m1 = leftSideXs.size * (-1);
+
+      if(n1 > 0) n1 = leftSideOnes.size;
+      else n1 = leftSideOnes.size * (-1);
+
+      if(m2 > 0) m2 = rightSideXs.size;
+      else m2 = rightSideXs.size * (-1);
+
+      if(n2 > 0) n2 = rightSideOnes.size;
+      else n2 = rightSideOnes.size * (-1);
     }
 
     function keyA(){
@@ -357,18 +371,25 @@
     		}
     	}
 
+      // Equation / Inequation
+      b1 = (m1 * result) + n1;
+      b2 = (m2 * result) + n2;
+      equality = " = ";
+      if(b1 > b2) equality = " > ";
+      if(b1 < b2) equality = " < ";
+
     	// N1
     	if(n1 == 0 && m1 != 0){
-    		eq = eq + " = ";
+    		eq = eq + equality;
     	}else{
     		if(m1 != 0){
     			if(n1 < 0){
-    				eq = eq + " - " + Math.abs(n1) + " = ";
+    				eq = eq + " - " + Math.abs(n1) + equality;
     			}else{
-    				eq = eq + " + " + n1 + " = ";
+    				eq = eq + " + " + n1 + equality;
     			}
     		}else{
-    			eq = eq + n1 + " = ";
+    			eq = eq + n1 + equality;
     		}
     	}
 
