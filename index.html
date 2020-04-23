@@ -23,12 +23,6 @@
         }
     };
 
-    /*
-    TODO:
-    - Inequacions
-    - key A D S
-    */
-
     var platforms;
     var scoreText;
     var balance;
@@ -42,7 +36,6 @@
     var staticX;
     var staticMinusOne;
     var staticMinusX;
-    var lastThrownColliders = [];
 
     function getRndInteger(min, max) {
     	return Math.floor(Math.random() * (max - min + 1) ) + min;
@@ -56,6 +49,8 @@
     var n2 = getRndInteger(-10, 10);
 
     var result = (n2-n1) / (m1-m2)
+    var lastB1 = (m1 * result) + n1;
+    var lastB2 = (m2 * result) + n2;
 
     var game = new Phaser.Game(config);
 
@@ -65,6 +60,17 @@
         this.load.image('minusone', 'assets/minusone.png');
         this.load.image('x', 'assets/x.png');
         this.load.image('minusx', 'assets/minusx.png');
+
+        this.load.image('oneR', 'assets/one.png');
+        this.load.image('minusoneR', 'assets/minusone.png');
+        this.load.image('xR', 'assets/x.png');
+        this.load.image('minusxR', 'assets/minusx.png');
+
+        this.load.image('oneL', 'assets/one.png');
+        this.load.image('minusoneL', 'assets/minusone.png');
+        this.load.image('xL', 'assets/x.png');
+        this.load.image('minusxL', 'assets/minusx.png');
+
         this.load.image('trash', 'assets/trash.png');
         this.load.image('arrow', 'assets/arrow.png');
         this.load.image('balanceRight', 'assets/balance_right.png');
@@ -90,46 +96,42 @@
 
         scoreText = this.add.text(16, 16, "", { fontSize: '32px', fill: '#000' });
         showEquation(this);
-
-        this.input.keyboard.on('keydown_A', keyA, this);
-        this.input.keyboard.on('keydown_S', keyS, this);
-        this.input.keyboard.on('keydown_D', keyD, this);
     }
 
     function update (){
-      for (let item of leftSideOnes){
-        if(item.y > 700){
-          leftSideOnes.delete(item);
-          item.destroy();
-          if(n1 >= 0) n1--;
-          else n1++;
-        }
-      }
-      for (let item of leftSideXs){
-        if(item.y > 700){
-          leftSideXs.delete(item);
-          item.destroy();
-          if(m1 >= 0) m1--;
-          else m1++;
-        }
-      }
-      for (let item of rightSideOnes){
-        if(item.y > 700){
-          rightSideOnes.delete(item);
-          item.destroy();
-          if(n2 >= 0) n2--;
-          else n2++;
-        }
-      }
-      for (let item of rightSideXs){
-        if(item.y > 700){
-          rightSideXs.delete(item);
-          item.destroy();
-          if(m2 >= 0) m2--;
-          else m2++;
-        }
-      }
+      updateSet(leftSideOnes, "n1")
+      updateSet(leftSideXs, "m1")
+      updateSet(rightSideOnes, "n2")
+      updateSet(rightSideXs, "m2")
+
+      updateInternalValues();
       showEquation(this);
+    }
+
+    function updateSet(set, globalVarName) {
+      var it = set.values();
+      var tmp = it.next().value;
+      if(tmp != null){
+        var texture = tmp.texture.key;
+
+        for (let item of set){
+          if(item.y > 700){
+            set.delete(item);
+            item.destroy();
+            if(window[globalVarName] >= 0) window[globalVarName]--;
+            else window[globalVarName]++;
+            updateBalancePosition();
+          }
+
+          if(item.texture.key != texture){
+            set.delete(tmp);
+            set.delete(item);
+            tmp.destroy();
+            item.destroy();
+            updateBalancePosition();
+          }
+        }
+      }
     }
 
     function createStaticElements(env){
@@ -149,13 +151,13 @@
     }
 
     function createLeftSide(env){
-      buildBlocks(env, n1, leftSideOnes, "one", "minusone", 200);
-      buildBlocks(env, m1, leftSideXs, "x", "minusx", 100);
+      buildBlocks(env, n1, leftSideOnes, "oneL", "minusoneL", 200);
+      buildBlocks(env, m1, leftSideXs, "xL", "minusxL", 100);
     }
 
     function createRightSide(env){
-      buildBlocks(env, n2, rightSideOnes, "one", "minusone", 700);
-      buildBlocks(env, m2, rightSideXs, "x", "minusx", 600);
+      buildBlocks(env, n2, rightSideOnes, "oneR", "minusoneR", 700);
+      buildBlocks(env, m2, rightSideXs, "xR", "minusxR", 600);
     }
 
     function buildBlocks(env, number, set, positibetag, negativetag, xPos){
@@ -163,7 +165,7 @@
       if(number > 0){
         for (var i=0; i<number; i++){
           if(i%5 == 0) blocksOfFive++;
-          var tmp = env.physics.add.image(xPos + 25*blocksOfFive, 382 - 25*(i%5), positibetag);
+          var tmp = env.physics.add.image(xPos + 25*blocksOfFive, 382 - 23*(i%5), positibetag);
           tmp.setInteractive();
           set.add(tmp);
           env.input.on('pointerdown', startDrag, env)
@@ -184,10 +186,10 @@
     }
 
     function addColliders(env, newitem){
-      for (let item of leftSideOnes) lastThrownColliders.push(env.physics.add.collider(newitem, item));
-      for (let item of leftSideXs) lastThrownColliders.push(env.physics.add.collider(newitem, item));
-      for (let item of rightSideOnes) lastThrownColliders.push(env.physics.add.collider(newitem, item));
-      for (let item of rightSideXs) lastThrownColliders.push(env.physics.add.collider(newitem, item));
+      for (let item of leftSideOnes) env.physics.add.collider(newitem, item);
+      for (let item of leftSideXs) env.physics.add.collider(newitem, item);
+      for (let item of rightSideOnes) env.physics.add.collider(newitem, item);
+      for (let item of rightSideXs) env.physics.add.collider(newitem, item);
     }
 
     function startDrag(pointer, targets) {
@@ -197,14 +199,14 @@
       this.input.on('pointerup', stopDrag, this);
 
       if(this.dragObj.x < 315){
-        if(this.dragObj.texture.key == "one"){
+        if(this.dragObj.texture.key.includes("one")){
           leftSideOnes.delete(this.dragObj);
         }else{
           leftSideXs.delete(this.dragObj);
         }
       }
       if(this.dragObj.x > 475){
-        if(this.dragObj.texture.key == "one"){
+        if(this.dragObj.texture.key.includes("one")){
           rightSideOnes.delete(this.dragObj);
         }else{
           rightSideXs.delete(this.dragObj);
@@ -233,8 +235,7 @@
         }
 
         tmp.setInteractive();
-        lastThrownColliders = [];
-        lastThrownColliders.push(this.physics.add.collider(tmp, platforms));
+        this.physics.add.collider(tmp, platforms);
         this.dragObj.destroy();
         this.dragObj = tmp;
         addColliders(this, tmp);
@@ -264,52 +265,39 @@
 
       // Add the element in the new position if any
       if(this.dragObj.visible){
-        if(this.dragObj.x < 315){
-          if(this.dragObj.texture.key == "one"){
-            startDragUpdate(this, leftSideOnes, "n1", n1 >= 0);
-          }if(this.dragObj.texture.key == "x"){
-            startDragUpdate(this, leftSideXs, "m1", m1 >= 0);
-          }if(this.dragObj.texture.key == "minusone"){
-            startDragUpdate(this, leftSideOnes, "n1", n1 <= 0);
-          }if(this.dragObj.texture.key == "minusx"){
-            startDragUpdate(this, leftSideXs, "m1", m1 <= 0);
+        if(this.dragObj.x < 330){
+          if(this.dragObj.texture.key.startsWith("one")){
+            this.dragObj.setTexture("oneL");
+            leftSideOnes.add(this.dragObj);
+          }if(this.dragObj.texture.key.startsWith("x")){
+            this.dragObj.setTexture("xL");
+            leftSideXs.add(this.dragObj);
+          }if(this.dragObj.texture.key.startsWith("minusone")){
+            this.dragObj.setTexture("minusoneL");
+            leftSideOnes.add(this.dragObj);
+          }if(this.dragObj.texture.key.startsWith("minusx")){
+            this.dragObj.setTexture("minusxL");
+            leftSideXs.add(this.dragObj);
           }
         }
-        if(this.dragObj.x > 475){
-          if(this.dragObj.texture.key == "one"){
-            startDragUpdate(this, rightSideOnes, "n2", n2 >= 0);
-          }if(this.dragObj.texture.key == "x"){
-            startDragUpdate(this, rightSideXs, "m2", m2 >= 0);
-          }if(this.dragObj.texture.key == "minusone"){
-            startDragUpdate(this, rightSideOnes, "n2", n2 <= 0);
-          }if(this.dragObj.texture.key == "minusx"){
-            startDragUpdate(this, rightSideXs, "m2", m2 <= 0);
+        if(this.dragObj.x > 465){
+          if(this.dragObj.texture.key.startsWith("one")){
+            this.dragObj.setTexture("oneR");
+            rightSideOnes.add(this.dragObj);
+          }if(this.dragObj.texture.key.startsWith("x")){
+            this.dragObj.setTexture("xR");
+            rightSideXs.add(this.dragObj);
+          }if(this.dragObj.texture.key.startsWith("minusone")){
+            this.dragObj.setTexture("minusoneR");
+            rightSideOnes.add(this.dragObj);
+          }if(this.dragObj.texture.key.startsWith("minusx")){
+            this.dragObj.setTexture("minusxR");
+            rightSideXs.add(this.dragObj);
           }
         }
         updateInternalValues();
-        // TODO: Update balance position **********************************
         showEquation(this);
-      }
-    }
-
-    function startDragUpdate(env, set, globalVarName, condition){
-      if(condition){
-        set.add(env.dragObj);
-        if(window[globalVarName] > 0) window[globalVarName] = set.size;
-        else window[globalVarName] = set.size * (-1);
-      }
-      else{
-        lastThrownColliders.forEach(function(lastThrownCollider) {
-          lastThrownCollider.collideCallback = function(e1, e2){
-            var it = set.values();
-            var tmp = it.next().value;
-            set.delete(tmp);
-            tmp.destroy();
-            e1.destroy();
-            if(window[globalVarName] > 0) window[globalVarName] = set.size;
-            else window[globalVarName] = set.size * (-1);
-          };
-        });
+        updateBalancePosition();
       }
     }
 
@@ -327,28 +315,104 @@
       else n2 = rightSideOnes.size * (-1);
     }
 
-    function keyA(){
-      bRight.destroy();
-      bLeft.destroy();
-      bRight = platforms.create(595, 518, 'balanceRightDown');
-      bLeft = platforms.create(205, 481, 'balanceLeftUp');
-      //TODO: one.setY(340);
-    }
+    function updateBalancePosition() {
+      var b1 = (m1 * result) + n1;
+      var b2 = (m2 * result) + n2;
+      var i = 0;
 
-    function keyS(){
-      bRight.destroy();
-      bLeft.destroy();
-      bRight = platforms.create(595, 500, 'balanceRight');
-      bLeft = platforms.create(205, 500, 'balanceLeft');
-      //TODO: one.setY(340);
-    }
+      if(b1 > b2 && (lastB1 <= lastB2)){
+        bRight.destroy();
+        bLeft.destroy();
+        bRight = platforms.create(595, 481, 'balanceRightUp');
+        bLeft = platforms.create(205, 518, 'balanceLeftDown');
 
-    function keyD() {
-      bRight.destroy();
-      bLeft.destroy();
-      bRight = platforms.create(595, 481, 'balanceRightUp');
-      bLeft = platforms.create(205, 518, 'balanceLeftDown');
-      //TODO: one.setY(340);
+        i = 0;
+        for (let item of rightSideOnes){
+          item.setY(340 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of rightSideXs){
+          item.setY(340 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of leftSideOnes){
+          item.setY(400 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of leftSideXs){
+          item.setY(400 - 23*(i%5));
+          i++
+        }
+      }
+
+      if(b1 < b2 && (lastB1 >= lastB2)){
+        bRight.destroy();
+        bLeft.destroy();
+        bRight = platforms.create(595, 518, 'balanceRightDown');
+        bLeft = platforms.create(205, 481, 'balanceLeftUp');
+
+        i = 0;
+        for (let item of rightSideOnes){
+          item.setY(400 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of rightSideXs){
+          item.setY(400 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of leftSideOnes){
+          item.setY(340 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of leftSideXs){
+          item.setY(340 - 23*(i%5));
+          i++
+        }
+      }
+      if(b1 == b2 && (lastB1 != lastB2)){
+        bRight.destroy();
+        bLeft.destroy();
+        bRight = platforms.create(595, 500, 'balanceRight');
+        bLeft = platforms.create(205, 500, 'balanceLeft');
+        i = 0;
+        for (let item of rightSideOnes){
+          item.setY(382 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of rightSideXs){
+          item.setY(382 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of leftSideOnes){
+          item.setY(382 - 23*(i%5));
+          i++
+        }
+
+        i = 0;
+        for (let item of leftSideXs){
+          item.setY(382 - 23*(i%5));
+          i++
+        }
+      }
+
+      lastB1 = b1;
+      lastB2 = b2;
     }
 
     function showEquation(env){
